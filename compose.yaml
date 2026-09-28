@@ -1,0 +1,26 @@
+# Dev stack for Meowdoption.
+# Services are added step by step: db (now), api, web, e2e (later steps).
+# Data lives in named volumes, not bind mounts: the project folder is a
+# VirtualBox share (vboxsf) with unreliable file locking and symlinks.
+
+services:
+  db:
+    # Postgres is only needed for test/prod parity; dev uses SQLite.
+    image: docker.io/library/postgres:17-alpine
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: meow
+      POSTGRES_PASSWORD: meow
+      POSTGRES_DB: meowdoption
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meow -d meowdoption"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:
