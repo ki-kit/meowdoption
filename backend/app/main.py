@@ -5,6 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import get_db
+from app.routers import cats
 
 app = FastAPI(title="Meowdoption API")
 api = APIRouter(prefix="/api")
@@ -16,4 +17,5 @@ def health(db: Annotated[Session, Depends(get_db)]) -> dict:
     return {"status": "ok", "database": "ok"}
 
 
+api.include_router(cats.router)
 app.include_router(api)

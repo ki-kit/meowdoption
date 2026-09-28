@@ -2,8 +2,10 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
+from pytest_bdd import parsers, then
 from sqlalchemy.orm import sessionmaker
 
+import app.models  # noqa: F401  (registers all tables on Base.metadata)
 from app.db import Base, get_db, make_engine
 from app.main import app
 
@@ -33,11 +35,21 @@ def engine():
 
 
 @pytest.fixture
-def client(engine):
-    TestSession = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+def session_factory(engine):
+    return sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
+
+@pytest.fixture
+def db_session(session_factory):
+    """Session for arranging test data directly in the DB (Given steps)."""
+    with session_factory() as session:
+        yield session
+
+
+@pytest.fixture
+def client(session_factory):
     def override_get_db():
-        with TestSession() as session:
+        with session_factory() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
@@ -50,3 +62,11 @@ def client(engine):
 def ctx() -> dict:
     """Scratch dict for passing state between BDD steps."""
     return {}
+
+
+# --- Steps shared by all features ---------------------------------------
+
+
+@then(parsers.parse("the response status is {code:d}"))
+def response_status(ctx, code):
+    assert ctx["response"].status_code == code, ctx["response"].text
