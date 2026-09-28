@@ -26,23 +26,28 @@ def cats_exist(db_session, datatable):
 
 @when("I list cats")
 def list_cats(client, ctx):
-    ctx["response"] = client.get("/api/cats")
+    ctx["response"] = client.get("/api/v1/cats")
 
 
 @when(parsers.parse('I list cats with "{query}"'))
 def list_cats_filtered(client, ctx, query):
-    ctx["response"] = client.get(f"/api/cats?{query}")
+    ctx["response"] = client.get(f"/api/v1/cats?{query}")
 
 
 @when(parsers.parse('I view the cat "{name}"'))
 def view_cat(client, ctx, db_session, name):
     cat = db_session.query(Cat).filter_by(name=name).one()
-    ctx["response"] = client.get(f"/api/cats/{cat.id}")
+    ctx["response"] = client.get(f"/api/v1/cats/{cat.id}")
+
+
+@when(parsers.parse('I request "{path}"'))
+def request_path(client, ctx, path):
+    ctx["response"] = client.get(path)
 
 
 @when("I view a cat that does not exist")
 def view_missing_cat(client, ctx):
-    ctx["response"] = client.get("/api/cats/999999")
+    ctx["response"] = client.get("/api/v1/cats/999999")
 
 
 @then(parsers.parse("the total is {total:d}"))

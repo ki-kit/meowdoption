@@ -56,6 +56,10 @@ Feature: Browse cats
     When I view a cat that does not exist
     Then the response status is 404
 
+  Scenario: Cats are only served under the versioned API
+    When I request "/api/cats"
+    Then the response status is 404
+
   Scenario: Invalid filter value is rejected
     When I list cats with "sex=dragon"
     Then the response status is 422
