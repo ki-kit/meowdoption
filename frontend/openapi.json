@@ -1050,6 +1050,9 @@
               }
             },
             "description": "Validation Error"
+          },
+          "429": {
+            "description": "Too many failed attempts; see Retry-After"
           }
         },
         "summary": "Login",

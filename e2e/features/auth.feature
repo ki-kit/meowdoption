@@ -27,3 +27,9 @@ Feature: Admin login
     And I press "Log in"
     Then I see the text "Incorrect email or password."
     And I see the heading "Admin login"
+
+  Scenario: Too many wrong passwords block logging in for a while
+    Given I open "/admin/login"
+    When I enter a wrong password 5 times for a fresh email address
+    And I try to log in once more
+    Then I see the text "Too many failed login attempts. Try again in 15 minutes."

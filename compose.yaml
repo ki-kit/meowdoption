@@ -24,6 +24,10 @@ services:
       # Never set these in production (the app refuses to start if you do).
       MEOW_DEV_ADMIN_EMAIL: admin@meowdoption.local
       MEOW_DEV_ADMIN_PASSWORD: meow-dev-password
+      # In dev every browser request reaches the API via the Vite proxy, i.e.
+      # from ONE IP, so the per-IP login limit would soon block everyone
+      # (e2e fails logins on purpose). The per-account limit stays as in prod.
+      MEOW_LOGIN_MAX_FAILURES_PER_IP: "1000"
     # The project dir is root:vboxsf 770; keep the host user's vboxsf
     # group inside the container so the bind mount is readable.
     group_add: [keep-groups]

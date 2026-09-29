@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { z } from "../../lib/zod";
 
-import { ApiError } from "../../api/client";
+import { ApiError, errorMessage } from "../../api/client";
 import { FormField, inputClass } from "../../components/FormField";
 import { useLogin, useMe } from "../../hooks/useAuth";
 import { safeRedirect } from "../../lib/safeRedirect";
@@ -41,7 +41,10 @@ export function LoginPage() {
     ? undefined
     : error instanceof ApiError && error.status === 401
       ? "Incorrect email or password."
-      : "Something went wrong. Please try again later.";
+      : error instanceof ApiError && error.status === 429
+        ? // The server's message says how long to wait.
+          (errorMessage(error) ?? "Too many failed attempts. Please try again later.")
+        : "Something went wrong. Please try again later.";
 
   return (
     <section className="mx-auto max-w-sm rounded-xl bg-white p-6 shadow-sm">

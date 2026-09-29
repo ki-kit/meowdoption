@@ -22,6 +22,9 @@ podman-compose up -d            # api (:8000) + web (:5173)
 - API docs: http://localhost:8000/docs
 - On start the API runs migrations and seeds 6 sample cats plus a **dev admin**
   (`admin@meowdoption.local` / `meow-dev-password`, set in `compose.yaml`).
+- Too many wrong passwords block that email for 15 minutes (see Production).
+  In dev all requests share the Vite proxy's IP, so the per-IP limit is raised
+  there; the per-account one applies as in production.
 - Code reloads on save (file watching polls: the project may live on a
   VirtualBox shared folder, which emits no file events).
 
@@ -95,6 +98,19 @@ podman exec -i meowdoption-prod_api_1 python -m app.cli create-admin you@example
   including a strict Content-Security-Policy, 6 MB request body limit. The API
   docs (`/docs`) aren't exposed.
 - Migrations run automatically when the API container starts.
+- **Login rate limiting**, in two layers:
+  - API: failed logins are counted per client IP: 5 per account (IP + email)
+    and 20 across accounts, within 15 minutes → `429` with `Retry-After`.
+    While blocked, even the correct password is refused. A successful login
+    resets that account's count. No email-only lockout, so nobody can lock
+    the real admin out from elsewhere. Settings: `MEOW_LOGIN_*` in
+    `backend/app/config.py`.
+  - nginx: at most 10 login requests/minute per IP (burst 10), which stops
+    floods before they reach the (deliberately slow) password hashing.
+  - The client IP comes from nginx, which overwrites `X-Forwarded-For` so it
+    can't be spoofed. **Behind a TLS proxy/load balancer**, enable the
+    `set_real_ip_from` lines in `frontend/nginx/default.conf`; otherwise every
+    visitor shares the proxy's IP and one login limit.
 - `-p meowdoption-prod` keeps it separate from the dev stack. After changing
   one service, use `down` + `up`: podman-compose 1.3 can't recreate a service
   that another one depends on.
@@ -118,7 +134,6 @@ scripts/    gen-api-types.sh
 
 ## Known limitations
 
-- **No login rate limiting** yet: add it (app or reverse proxy) before going live.
 - **Logout** ends the browser session only; a copied Bearer token stays valid
   until it expires (8 h) or the admin is deactivated.
 - **Media URLs are relative** (`/media/...`); a future mobile client needs to
