@@ -1,0 +1,54 @@
+# Production-like stack: Postgres, API (prod image), nginx serving the SPA.
+#
+#   cp .env.prod.example .env.prod   # then fill in real secrets
+#   podman-compose -p meowdoption-prod -f compose.prod.yaml up -d --build
+#
+# -p gives it its own project name, so it never clashes with the dev stack.
+# Put a TLS-terminating proxy in front of port 8080: auth cookies are
+# Secure-only in production, so logging in requires HTTPS.
+
+services:
+  db:
+    image: docker.io/library/postgres:17-alpine
+    env_file: .env.prod
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+  api:
+    build:
+      context: ./backend
+      target: prod
+    env_file: .env.prod
+    environment:
+      MEOW_ENV: production
+      MEOW_COOKIE_SECURE: "true"
+      MEOW_MEDIA_DIR: /data/media
+    depends_on: [db]
+    # No ports: only nginx (web) talks to the API, on the internal network.
+    volumes:
+      - media:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./frontend
+      target: prod
+    depends_on: [api]
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  media:

@@ -1,10 +1,14 @@
-FROM docker.io/library/python:3.13-slim
+FROM docker.io/library/python:3.13-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
+
+
+# --- dev: editable install + test tools; compose bind-mounts the code ---------
+FROM base AS dev
 
 # Install deps first so this layer is cached until pyproject.toml changes.
 COPY pyproject.toml ./
@@ -16,3 +20,36 @@ COPY . .
 
 EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
+# --- prod: runtime deps only, code baked in, unprivileged user -----------------
+FROM base AS prod
+
+# The app isn't pip-installed here (dev uses an editable install for that),
+# so make "import app" work for uvicorn *and* the alembic command.
+ENV PYTHONPATH=/app
+
+# Runtime dependencies straight from pyproject.toml (no dev extras, no
+# duplicated requirements file to keep in sync).
+COPY pyproject.toml ./
+RUN python -c "import tomllib; print('\n'.join(tomllib.load(open('pyproject.toml', 'rb'))['project']['dependencies']))" \
+        > /tmp/requirements.txt \
+    && pip install -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
+
+# The app runs as "app" but the code stays owned by root: a compromised
+# process can't modify it. Only /data (DB/media volume) is writable.
+RUN useradd --system --uid 10001 --home-dir /app app \
+    && mkdir -p /data/media && chown -R app /data
+
+COPY alembic.ini prod-start.sh ./
+COPY alembic ./alembic
+COPY app ./app
+# Explicit permissions: COPY keeps the source's mode, and a checkout can be
+# unreadable for "others" (e.g. a VirtualBox share is 770), which would lock
+# the unprivileged app user out of its own code. Readable by all, writable by root.
+RUN chmod -R a+rX,go-w /app
+
+USER app
+EXPOSE 8000
+CMD ["sh", "prod-start.sh"]
