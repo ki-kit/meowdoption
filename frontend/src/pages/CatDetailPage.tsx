@@ -53,6 +53,16 @@ export function CatDetailPage() {
             <span className="font-medium">Good with: </span>
             {goodWith.length ? goodWith.join(", ") : "not known yet"}
           </p>
+          {cat.status === "adopted" ? (
+            <p className="mt-6 font-medium text-stone-600">{cat.name} has already found a home 🏡</p>
+          ) : (
+            <Link
+              to={`/cats/${cat.id}/apply`}
+              className="mt-6 inline-block rounded-full bg-amber-600 px-6 py-2 font-semibold text-white hover:bg-amber-700"
+            >
+              Apply to adopt {cat.name}
+            </Link>
+          )}
         </div>
       </div>
     </article>
