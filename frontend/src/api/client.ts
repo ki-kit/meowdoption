@@ -36,6 +36,18 @@ export function apiPost<T>(path: string, body: unknown): Promise<T> {
   });
 }
 
+export function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export function apiDelete(path: string): Promise<void> {
+  return request<void>(path, { method: "DELETE" });
+}
+
 /** Form-encoded POST, as OAuth2's password login requires. */
 export function apiPostForm<T>(path: string, fields: Record<string, string>): Promise<T> {
   return request<T>(path, { method: "POST", body: new URLSearchParams(fields) });

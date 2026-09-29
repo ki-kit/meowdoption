@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.routers import applications, auth, cats
+from app.routers import admin, applications, auth, cats
 
 app = FastAPI(title="Meowdoption API", version="1.0.0")
 
@@ -24,4 +24,5 @@ v1 = APIRouter(prefix="/api/v1")
 v1.include_router(cats.router)
 v1.include_router(applications.router)
 v1.include_router(auth.router)
+v1.include_router(admin.router)
 app.include_router(v1)

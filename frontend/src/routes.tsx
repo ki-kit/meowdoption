@@ -1,8 +1,11 @@
-import type { RouteObject } from "react-router";
+import { Navigate, type RouteObject } from "react-router";
 
 import { Layout } from "./components/Layout";
 import { RequireAdmin } from "./components/RequireAdmin";
-import { DashboardPage } from "./pages/admin/DashboardPage";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import { ApplicationsPage } from "./pages/admin/ApplicationsPage";
+import { CatFormPage } from "./pages/admin/CatFormPage";
+import { CatsPage } from "./pages/admin/CatsPage";
 import { LoginPage } from "./pages/admin/LoginPage";
 import { ApplyPage } from "./pages/ApplyPage";
 import { CatDetailPage } from "./pages/CatDetailPage";
@@ -23,7 +26,18 @@ export const routes: RouteObject[] = [
       {
         path: "admin",
         element: <RequireAdmin />,
-        children: [{ index: true, element: <DashboardPage /> }],
+        children: [
+          {
+            element: <AdminLayout />,
+            children: [
+              { index: true, element: <Navigate to="/admin/applications" replace /> },
+              { path: "applications", element: <ApplicationsPage /> },
+              { path: "cats", element: <CatsPage /> },
+              { path: "cats/new", element: <CatFormPage /> },
+              { path: "cats/:id/edit", element: <CatFormPage /> },
+            ],
+          },
+        ],
       },
       { path: "*", element: <NotFoundPage /> },
     ],

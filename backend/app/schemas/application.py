@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
 
-from app.models import ApplicationStatus, HousingType
+from app.models import ApplicationStatus, CatStatus, HousingType
 
 
 class ApplicationCreate(BaseModel):
@@ -33,3 +33,39 @@ class ApplicationReceipt(BaseModel):
     cat_id: int
     status: ApplicationStatus
     created_at: datetime
+
+
+class CatSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    status: CatStatus
+
+
+class ApplicationRead(BaseModel):
+    """Admin view: full applicant details."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    cat: CatSummary
+    full_name: str
+    email: str
+    phone: str
+    message: str
+    housing_type: HousingType
+    has_other_pets: bool
+    status: ApplicationStatus
+    created_at: datetime
+
+
+class ApplicationPage(BaseModel):
+    items: list[ApplicationRead]
+    total: int
+    page: int
+    size: int
+
+
+class ApplicationStatusUpdate(BaseModel):
+    status: ApplicationStatus

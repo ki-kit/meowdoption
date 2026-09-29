@@ -56,9 +56,9 @@ describe("admin auth", () => {
 
     await logIn(ADMIN.email, PASSWORD);
 
-    expect(await screen.findByRole("heading", { name: "Admin dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Applications", level: 1 })).toBeInTheDocument();
     expect(screen.getByText(`Signed in as ${ADMIN.email}`)).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/admin");
+    expect(router.state.location.pathname).toBe("/admin/applications");
     // OAuth2 password flow: form-encoded, email in "username".
     const loginCall = api.mock.calls.find(([url]) => String(url).endsWith("/auth/login"))!;
     expect(String(loginCall[1]?.body)).toContain("username=admin%40meow.test");
@@ -91,14 +91,14 @@ describe("admin auth", () => {
 
     await logIn(ADMIN.email, PASSWORD);
 
-    await screen.findByRole("heading", { name: "Admin dashboard" });
-    expect(router.state.location.pathname).toBe("/admin");
+    await screen.findByRole("heading", { name: "Applications", level: 1 });
+    expect(router.state.location.pathname).toBe("/admin/applications");
   });
 
   it("skips the login form when already logged in", async () => {
     authApi({ loggedIn: true });
     renderRoute("/admin/login");
-    expect(await screen.findByRole("heading", { name: "Admin dashboard" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Applications", level: 1 })).toBeInTheDocument();
   });
 
   it("logs out and can't get back in without logging in again", async () => {
