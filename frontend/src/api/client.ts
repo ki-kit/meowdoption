@@ -19,6 +19,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const detail = await res.json().catch(() => null);
     throw new ApiError(res.status, detail);
   }
+  // 204 No Content (e.g. logout) has no body to parse.
+  if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
 }
 
@@ -32,6 +34,11 @@ export function apiPost<T>(path: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+/** Form-encoded POST, as OAuth2's password login requires. */
+export function apiPostForm<T>(path: string, fields: Record<string, string>): Promise<T> {
+  return request<T>(path, { method: "POST", body: new URLSearchParams(fields) });
 }
 
 /** FastAPI's `{"detail": "..."}` message, if the error carries one. */

@@ -1,6 +1,9 @@
 import type { RouteObject } from "react-router";
 
 import { Layout } from "./components/Layout";
+import { RequireAdmin } from "./components/RequireAdmin";
+import { DashboardPage } from "./pages/admin/DashboardPage";
+import { LoginPage } from "./pages/admin/LoginPage";
 import { ApplyPage } from "./pages/ApplyPage";
 import { CatDetailPage } from "./pages/CatDetailPage";
 import { CatListPage } from "./pages/CatListPage";
@@ -16,6 +19,12 @@ export const routes: RouteObject[] = [
       { path: "cats", element: <CatListPage /> },
       { path: "cats/:id", element: <CatDetailPage /> },
       { path: "cats/:id/apply", element: <ApplyPage /> },
+      { path: "admin/login", element: <LoginPage /> },
+      {
+        path: "admin",
+        element: <RequireAdmin />,
+        children: [{ index: true, element: <DashboardPage /> }],
+      },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

@@ -2,12 +2,15 @@
 
 Usage (inside the api container):  python -m app.seed
 Idempotent: does nothing if any cat already exists.
+Also creates the dev admin from MEOW_DEV_ADMIN_* if set (never in production).
 """
 
 from sqlalchemy import func, select
 
+from app.config import get_settings
 from app.db import SessionLocal
-from app.models import Cat, CatStatus, Sex
+from app.models import AdminUser, Cat, CatStatus, Sex
+from app.services.admins import create_admin
 
 SAMPLE_CATS = [
     dict(name="Mourek", sex=Sex.male, age_months=24, breed="European Shorthair",
@@ -40,5 +43,20 @@ def seed() -> int:
         return len(SAMPLE_CATS)
 
 
+def seed_dev_admin() -> str | None:
+    """Create MEOW_DEV_ADMIN_EMAIL if configured and missing (dev/e2e only)."""
+    settings = get_settings()
+    if not (settings.dev_admin_email and settings.dev_admin_password):
+        return None
+    with SessionLocal() as db:
+        if db.scalar(select(AdminUser.id).where(AdminUser.email == settings.dev_admin_email.lower())):
+            return None
+        return create_admin(
+            db, settings.dev_admin_email, settings.dev_admin_password.get_secret_value()
+        ).email
+
+
 if __name__ == "__main__":
     print(f"Seeded {seed()} cats.")
+    if email := seed_dev_admin():
+        print(f"Created dev admin {email}.")

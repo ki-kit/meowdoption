@@ -10,6 +10,10 @@ dependencies = [
     "pydantic-settings>=2.6",
     "psycopg[binary]>=3.2",
     "email-validator>=2.2",
+    "pyjwt>=2.10",
+    "pwdlib[argon2]>=0.2",
+    # Form parsing for the OAuth2 password login.
+    "python-multipart>=0.0.20",
 ]
 
 [project.optional-dependencies]

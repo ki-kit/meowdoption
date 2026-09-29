@@ -1,16 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
 
-from app.db import get_db
+from app.deps import DbSession
 from app.models import Cat, CatStatus, Sex
 from app.schemas.cat import CatPage, CatRead
 
 router = APIRouter(prefix="/cats", tags=["cats"])
-
-DbSession = Annotated[Session, Depends(get_db)]
 
 
 @router.get("", response_model=CatPage)
