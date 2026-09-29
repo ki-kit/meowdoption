@@ -1,10 +1,57 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StringConstraints,
+    computed_field,
+    model_validator,
+)
 from pydantic_core import PydanticCustomError
 
 from app.models import CatStatus, Sex
+from app.storage import LocalStorage
+
+
+DEFAULT_MEOW_URL = "/media/default/meow.wav"
+
+
+class PhotoRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    filename: str = Field(exclude=True)
+    is_primary: bool
+    width: int
+    height: int
+
+    @computed_field
+    @property
+    def url(self) -> str:
+        return LocalStorage.url(self.filename)
+
+
+class SoundRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    filename: str = Field(exclude=True)
+    content_type: str
+    is_primary: bool
+    duration_s: float | None
+
+    @computed_field
+    @property
+    def url(self) -> str:
+        return LocalStorage.url(self.filename)
+
+
+class MediaUpdate(BaseModel):
+    # Only "make this the primary" is supported: switching a primary *off*
+    # would leave the cat without one. Pick another primary instead.
+    is_primary: Literal[True]
 
 
 class CatRead(BaseModel):
@@ -24,6 +71,19 @@ class CatRead(BaseModel):
     good_with_dogs: bool
     created_at: datetime
     updated_at: datetime
+    photos: list[PhotoRead] = []
+    sounds: list[SoundRead] = []
+
+    @computed_field
+    @property
+    def primary_photo_url(self) -> str | None:
+        return next((p.url for p in self.photos if p.is_primary), None)
+
+    @computed_field
+    @property
+    def primary_sound_url(self) -> str:
+        # Every cat can meow: without its own sound it gets the default one.
+        return next((s.url for s in self.sounds if s.is_primary), DEFAULT_MEOW_URL)
 
 
 class CatPage(BaseModel):

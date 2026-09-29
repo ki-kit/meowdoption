@@ -2,7 +2,10 @@ import type { CatFilters } from "../api/cats";
 
 type Props = {
   filters: CatFilters;
-  onChange: (filters: CatFilters) => void;
+  /** Only the fields that changed: the parent merges them into the latest
+   * state, so two quick changes can't overwrite each other. */
+  onChange: (patch: CatFilters) => void;
+  onClear: () => void;
 };
 
 // "" in a <select> means "any", i.e. the filter is not sent.
@@ -21,9 +24,9 @@ const TRAITS = [
 
 const selectClass = "mt-1 block rounded-md border border-stone-300 bg-white px-2 py-1";
 
-export function FilterBar({ filters, onChange }: Props) {
+export function FilterBar({ filters, onChange, onClear }: Props) {
   // Any filter change goes back to page 1: the old page may not exist anymore.
-  const update = (patch: CatFilters) => onChange({ ...filters, ...patch, page: undefined });
+  const update = (patch: CatFilters) => onChange({ ...patch, page: undefined });
 
   return (
     <form
@@ -90,7 +93,7 @@ export function FilterBar({ filters, onChange }: Props) {
       <button
         type="button"
         className="text-sm text-amber-700 underline"
-        onClick={() => onChange({})}
+        onClick={onClear}
       >
         Clear filters
       </button>

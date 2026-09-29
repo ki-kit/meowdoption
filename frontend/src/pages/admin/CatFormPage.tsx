@@ -8,6 +8,7 @@ import { FormField, inputClass } from "../../components/FormField";
 import { useSaveCat } from "../../hooks/useAdmin";
 import { useCat } from "../../hooks/useCats";
 import { catSchema, type CatFormValues } from "../../lib/catSchema";
+import { CatMediaSection } from "./CatMediaSection";
 import { formatAge, STATUS_LABEL } from "../../lib/format";
 
 const TRAITS = [
@@ -29,7 +30,13 @@ export function CatFormPage() {
   if (error) return <p role="alert">Couldn't load this cat.</p>;
   if (isPending) return <p>Loading…</p>;
   // key: remount with fresh defaults if we navigate between two cats.
-  return <CatForm key={cat.id} cat={cat} />;
+  return (
+    <>
+      <CatForm key={cat.id} cat={cat} />
+      <CatMediaSection cat={cat} kind="photos" />
+      <CatMediaSection cat={cat} kind="sounds" />
+    </>
+  );
 }
 
 function CatForm({ cat }: { cat?: Cat }) {

@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router";
 
 import { ApiError } from "../api/client";
+import type { Photo } from "../api/cats";
 import { CatBadges } from "../components/CatBadges";
+import { CatPhoto } from "../components/CatPhoto";
+import { MeowButton } from "../components/MeowButton";
 import { useCat } from "../hooks/useCats";
 import { formatAge } from "../lib/format";
 
@@ -38,11 +42,12 @@ export function CatDetailPage() {
     <article className="rounded-xl bg-white p-6 shadow-sm">
       {backLink}
       <div className="mt-4 grid gap-6 md:grid-cols-2">
-        <div className="flex h-64 items-center justify-center rounded-lg bg-amber-100 text-8xl">
-          🐈
-        </div>
+        <Gallery name={cat.name} photos={cat.photos} />
         <div>
-          <h1 className="text-3xl font-bold text-amber-800">{cat.name}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-amber-800">{cat.name}</h1>
+            <MeowButton name={cat.name} src={cat.primary_sound_url} size="lg" />
+          </div>
           <p className="mb-3 text-stone-500">
             {formatAge(cat.age_months)}
             {cat.breed && ` · ${cat.breed}`}
@@ -66,5 +71,33 @@ export function CatDetailPage() {
         </div>
       </div>
     </article>
+  );
+}
+
+function Gallery({ name, photos }: { name: string; photos: Photo[] }) {
+  const primary = photos.find((p) => p.is_primary) ?? photos[0];
+  const [selectedId, setSelectedId] = useState(primary?.id);
+  const selected = photos.find((p) => p.id === selectedId) ?? primary;
+
+  return (
+    <div>
+      <CatPhoto name={name} url={selected?.url ?? null} className="h-72 w-full rounded-lg" emojiClass="text-8xl" />
+      {photos.length > 1 && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {photos.map((p, i) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedId(p.id)}
+              aria-label={`Show photo ${i + 1} of ${name}`}
+              aria-pressed={p.id === selected?.id}
+              className="overflow-hidden rounded-md ring-amber-600 aria-pressed:ring-2"
+            >
+              <img src={p.url} alt="" className="h-16 w-16 object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

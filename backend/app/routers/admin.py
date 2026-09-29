@@ -9,10 +9,13 @@ from app.models import Application, ApplicationStatus, Cat
 from app.schemas.application import ApplicationPage, ApplicationRead, ApplicationStatusUpdate
 from app.schemas.cat import CatCreate, CatRead, CatUpdate
 from app.services.applications import TransitionError, set_status
+from app.storage import LocalStorage, get_storage
 
 # Router-level dependency: every route in this file requires an admin, so a new
 # route can't be added here unprotected by accident.
 router = APIRouter(tags=["admin"], dependencies=[Depends(require_admin)])
+
+Storage = Annotated[LocalStorage, Depends(get_storage)]
 
 
 def _get_cat(db: DbSession, cat_id: int) -> Cat:
@@ -45,10 +48,15 @@ def update_cat(cat_id: int, payload: CatUpdate, db: DbSession) -> Cat:
 
 
 @router.delete("/cats/{cat_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_cat(cat_id: int, db: DbSession) -> Response:
-    # Its applications go too (FK ON DELETE CASCADE).
-    db.delete(_get_cat(db, cat_id))
+def delete_cat(cat_id: int, db: DbSession, storage: Storage) -> Response:
+    cat = _get_cat(db, cat_id)
+    files = [m.filename for m in (*cat.photos, *cat.sounds)]
+    # Its applications, photos and sounds rows go too (FK ON DELETE CASCADE).
+    db.delete(cat)
     db.commit()
+    # Files only after the commit: a failed delete must not lose them.
+    for key in files:
+        storage.delete(key)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { makeCat, mockApi, page, requestedUrls } from "../test/fixtures";
@@ -55,6 +55,21 @@ describe("CatListPage", () => {
     expect(last.pathname).toBe("/api/v1/cats");
     expect(last.searchParams.get("sex")).toBe("female");
     expect(last.searchParams.get("castrated")).toBe("true");
+  });
+
+  it("keeps earlier filters when two change before the page re-renders", async () => {
+    catsApi();
+    const { router } = renderRoute("/cats");
+    await screen.findByRole("article", { name: "Oskar" });
+
+    // Two changes in one tick: the second must build on the first, not on
+    // the (stale) filters of the last render.
+    act(() => {
+      fireEvent.change(screen.getByLabelText("Sex"), { target: { value: "female" } });
+      fireEvent.change(screen.getByLabelText("Castrated"), { target: { value: "true" } });
+    });
+
+    await waitFor(() => expect(router.state.location.search).toBe("?sex=female&castrated=true"));
   });
 
   it("restores filters from a shared URL", async () => {

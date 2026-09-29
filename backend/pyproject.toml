@@ -14,6 +14,10 @@ dependencies = [
     "pwdlib[argon2]>=0.2",
     # Form parsing for the OAuth2 password login.
     "python-multipart>=0.0.20",
+    # Media: image decoding/re-encoding, audio type sniffing and duration.
+    "pillow>=11.0",
+    "filetype>=1.2",
+    "mutagen>=1.47",
 ]
 
 [project.optional-dependencies]

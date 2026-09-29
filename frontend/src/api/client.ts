@@ -48,6 +48,14 @@ export function apiDelete(path: string): Promise<void> {
   return request<void>(path, { method: "DELETE" });
 }
 
+/** multipart/form-data upload. No Content-Type header: the browser sets it
+ * with the multipart boundary. */
+export function apiUpload<T>(path: string, file: File): Promise<T> {
+  const body = new FormData();
+  body.append("file", file);
+  return request<T>(path, { method: "POST", body });
+}
+
 /** Form-encoded POST, as OAuth2's password login requires. */
 export function apiPostForm<T>(path: string, fields: Record<string, string>): Promise<T> {
   return request<T>(path, { method: "POST", body: new URLSearchParams(fields) });

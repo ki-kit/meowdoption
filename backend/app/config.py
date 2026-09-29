@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     # SQLite in dev; set to postgresql+psycopg://... for test/prod.
     database_url: str = "sqlite:////data/meowdoption.sqlite3"
 
+    # Uploaded photos/sounds (a named volume in compose; S3 later via storage.py).
+    media_dir: str = "/data/media"
+
     # JWT signing key. Generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))"
     secret_key: SecretStr = SecretStr(DEV_SECRET)
     access_token_minutes: int = 8 * 60
