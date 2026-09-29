@@ -1,52 +1,14 @@
 import { apiGet } from "./client";
+import type { components } from "./schema";
 
-// Mirrors backend app/schemas/cat.py (CatRead / CatPage).
-export type Sex = "male" | "female";
-export type CatStatus = "available" | "pending" | "adopted";
-
-export interface Photo {
-  id: number;
-  url: string;
-  is_primary: boolean;
-  width: number;
-  height: number;
-}
-
-export interface Sound {
-  id: number;
-  url: string;
-  content_type: string;
-  is_primary: boolean;
-  duration_s: number | null;
-}
-
-export interface Cat {
-  id: number;
-  name: string;
-  age_months: number;
-  sex: Sex;
-  breed: string;
-  description: string;
-  castrated: boolean;
-  status: CatStatus;
-  good_with_kids: boolean;
-  good_with_cats: boolean;
-  good_with_dogs: boolean;
-  created_at: string;
-  updated_at: string;
-  photos: Photo[];
-  sounds: Sound[];
-  primary_photo_url: string | null;
-  /** Always set: cats without their own sound get the default meow. */
-  primary_sound_url: string;
-}
-
-export interface CatPage {
-  items: Cat[];
-  total: number;
-  page: number;
-  size: number;
-}
+// Generated from the API's OpenAPI schema (npm run gen:api), never hand-written.
+type Schemas = components["schemas"];
+export type Sex = Schemas["Sex"];
+export type CatStatus = Schemas["CatStatus"];
+export type Photo = Schemas["PhotoRead"];
+export type Sound = Schemas["SoundRead"];
+export type Cat = Schemas["CatRead"];
+export type CatPage = Schemas["CatPage"];
 
 // Same names as the API query params, so URL <-> API is a straight copy.
 export interface CatFilters {
