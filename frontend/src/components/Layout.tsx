@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router";
+import { Link, NavLink, Outlet } from "react-router";
 
 export function Layout() {
   return (
@@ -8,6 +8,14 @@ export function Layout() {
           <Link to="/" className="text-xl font-bold text-amber-700">
             🐱 Meowdoption
           </Link>
+          <NavLink
+            to="/cats"
+            className={({ isActive }) =>
+              isActive ? "font-semibold text-amber-800" : "text-stone-600 hover:text-amber-700"
+            }
+          >
+            Cats
+          </NavLink>
         </nav>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
