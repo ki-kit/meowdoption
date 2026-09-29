@@ -1,0 +1,12 @@
+# Browsers + system libs ship in the image, so nothing is installed on the host.
+# Keep this tag in lockstep with @playwright/test in package.json.
+FROM mcr.microsoft.com/playwright:v1.63.0-noble
+
+WORKDIR /e2e
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+CMD ["npm", "test"]

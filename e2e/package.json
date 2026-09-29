@@ -1,0 +1,16 @@
+{
+  "name": "meowdoption-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "bddgen && playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^24",
+    "playwright-bdd": "^9.2.1",
+    "typescript": "^7.0.2"
+  }
+}

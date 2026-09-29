@@ -1,5 +1,6 @@
 # Dev stack for Meowdoption.
-# Services: api + web (dev), db (profile "test", Postgres parity).
+# Services: api + web (dev), db (profile "test", Postgres parity),
+# e2e (profile "e2e", Playwright against web).
 # Data lives in named volumes, not bind mounts: the project folder is a
 # VirtualBox share (vboxsf) with unreliable file locking and symlinks.
 
@@ -38,6 +39,18 @@ services:
       # remove this volume (podman volume rm meowdoption_webmodules).
       - webmodules:/app/node_modules
 
+  e2e:
+    build: ./e2e
+    profiles: ["e2e"]
+    depends_on: [api, web]
+    group_add: [keep-groups]
+    # Chromium needs more than the default 64 MB /dev/shm.
+    ipc: host
+    volumes:
+      - ./e2e:/e2e
+      # Same vboxsf symlink issue as web; rebuild + drop volume after package.json changes.
+      - e2emodules:/e2e/node_modules
+
   db:
     # Postgres is only needed for test/prod parity; dev uses SQLite.
     image: docker.io/library/postgres:17-alpine
@@ -60,3 +73,4 @@ volumes:
   apidata:
   pgdata:
   webmodules:
+  e2emodules:
