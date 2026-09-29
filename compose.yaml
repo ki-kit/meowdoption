@@ -1,5 +1,5 @@
 # Dev stack for Meowdoption.
-# Services are added step by step: db (now), api, web, e2e (later steps).
+# Services: api + web (dev), db (profile "test", Postgres parity).
 # Data lives in named volumes, not bind mounts: the project folder is a
 # VirtualBox share (vboxsf) with unreliable file locking and symlinks.
 
@@ -24,6 +24,20 @@ services:
       - ./backend:/app
       - apidata:/data
 
+  web:
+    build: ./frontend
+    group_add: [keep-groups]
+    # No depends_on: Vite only reaches api when proxying a request, and
+    # unit tests must run without the backend (podman-compose 1.3 ignores --no-deps).
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Named volume shadows the bind mount's node_modules: npm's symlinks
+      # break on vboxsf. After changing package.json, rebuild the image and
+      # remove this volume (podman volume rm meowdoption_webmodules).
+      - webmodules:/app/node_modules
+
   db:
     # Postgres is only needed for test/prod parity; dev uses SQLite.
     image: docker.io/library/postgres:17-alpine
@@ -45,3 +59,4 @@ services:
 volumes:
   apidata:
   pgdata:
+  webmodules:
