@@ -26,5 +26,8 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
+    // Must exceed the 5 s findBy/waitFor timeout (src/test/setup.ts): a test
+    // whose first lazy page load is slow may legitimately wait that long.
+    testTimeout: 15_000,
   },
 });

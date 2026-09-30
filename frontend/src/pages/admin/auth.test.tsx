@@ -74,6 +74,24 @@ describe("admin auth", () => {
     expect(screen.getByRole("heading", { name: "Admin login" })).toBeInTheDocument();
   });
 
+  it("tells the admin how long to wait after too many failed attempts", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(async (input) =>
+      String(input).endsWith("/auth/me")
+        ? new Response(JSON.stringify({ detail: "Not authenticated" }), { status: 401 })
+        : new Response(
+            JSON.stringify({ detail: "Too many failed login attempts. Try again in 15 minutes." }),
+            { status: 429, headers: { "Retry-After": "900" } },
+          ),
+    );
+    renderRoute("/admin/login");
+
+    await logIn(ADMIN.email, PASSWORD);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Too many failed login attempts. Try again in 15 minutes.",
+    );
+  });
+
   it("validates empty fields without calling the API", async () => {
     const api = authApi();
     renderRoute("/admin/login");

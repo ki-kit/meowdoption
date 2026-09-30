@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     # Secure cookies are only sent over HTTPS; dev runs on plain http.
     cookie_secure: bool = False
 
+    # Login rate limiting: failed attempts within the window, per rule.
+    login_window_minutes: int = 15
+    login_max_failures_per_account: int = 5  # same IP + same email
+    login_max_failures_per_ip: int = 20  # same IP, any emails
+
     # Dev/e2e convenience: seed creates this admin if both are set.
     dev_admin_email: str | None = None
     dev_admin_password: SecretStr | None = None
