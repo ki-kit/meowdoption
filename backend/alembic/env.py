@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from alembic import context
 
+import app.models  # noqa: F401  (registers all tables for autogenerate)
 from app.db import Base, engine
 
 config = context.config
