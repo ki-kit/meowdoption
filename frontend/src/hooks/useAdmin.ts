@@ -3,12 +3,16 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import {
   createCat,
   deleteCat,
+  deleteMedia,
+  makeMediaPrimary,
+  uploadMedia,
   fetchApplications,
   setApplicationStatus,
   updateCat,
   type ApplicationFilters,
   type ApplicationStatus,
   type CatInput,
+  type MediaKind,
 } from "../api/admin";
 
 export function useApplications(filters: ApplicationFilters) {
@@ -52,4 +56,14 @@ export function useSaveCat(id?: number) {
 export function useDeleteCat() {
   const invalidate = useInvalidateAll();
   return useMutation({ mutationFn: deleteCat, onSuccess: invalidate });
+}
+
+/** Upload / make primary / delete for one cat's photos or sounds. */
+export function useMediaActions(kind: MediaKind, catId: number) {
+  const invalidate = useInvalidateAll();
+  return {
+    upload: useMutation({ mutationFn: (file: File) => uploadMedia(kind, catId, file), onSuccess: invalidate }),
+    makePrimary: useMutation({ mutationFn: (id: number) => makeMediaPrimary(kind, id), onSuccess: invalidate }),
+    remove: useMutation({ mutationFn: (id: number) => deleteMedia(kind, id), onSuccess: invalidate }),
+  };
 }

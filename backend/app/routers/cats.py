@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
+from sqlalchemy.orm import selectinload
 
 from app.deps import DbSession
 from app.models import Cat, CatStatus, Sex
@@ -50,7 +51,9 @@ def list_cats(
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery()))
     items = db.scalars(
-        stmt.order_by(Cat.created_at.desc(), Cat.id.desc())
+        # selectinload: all photos/sounds of the page's cats in one query each.
+        stmt.options(selectinload(Cat.photos), selectinload(Cat.sounds))
+        .order_by(Cat.created_at.desc(), Cat.id.desc())
         .offset((page - 1) * size)
         .limit(size)
     ).all()

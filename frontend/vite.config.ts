@@ -14,7 +14,11 @@ export default defineConfig({
     allowedHosts: ["localhost", "web"],
     // Same-origin proxy: the browser only talks to :5173, so no CORS in dev
     // and cookies (auth, later) just work.
-    proxy: { "/api": { target: apiTarget, changeOrigin: true } },
+    proxy: {
+      "/api": { target: apiTarget, changeOrigin: true },
+      // Uploaded photos/sounds and the default meow, served by the API.
+      "/media": { target: apiTarget, changeOrigin: true },
+    },
     // vboxsf emits no inotify events, so file watching must poll.
     watch: { usePolling: true, interval: 300 },
   },

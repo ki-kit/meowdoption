@@ -11,6 +11,7 @@ from app.db import Base, get_db, make_engine
 from app.main import app
 from app.models import Application, Cat, HousingType
 from app.services.admins import create_admin
+from app.storage import LocalStorage, get_storage
 
 # Tests use in-memory SQLite unless TEST_DATABASE_URL points at Postgres.
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "sqlite://")
@@ -45,12 +46,19 @@ def db_session(session_factory):
 
 
 @pytest.fixture
-def client(session_factory):
+def media_storage(tmp_path) -> LocalStorage:
+    """Uploads go to a per-test temp dir, never the real media volume."""
+    return LocalStorage(tmp_path / "media")
+
+
+@pytest.fixture
+def client(session_factory, media_storage):
     def override_get_db():
         with session_factory() as session:
             yield session
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_storage] = lambda: media_storage
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

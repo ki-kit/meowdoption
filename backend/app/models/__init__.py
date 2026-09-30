@@ -3,12 +3,15 @@
 from app.models.admin_user import AdminUser
 from app.models.application import Application, ApplicationStatus, HousingType
 from app.models.cat import Cat, CatStatus, Sex
+from app.models.media import CatPhoto, CatSound
 
 __all__ = [
     "AdminUser",
     "Application",
     "ApplicationStatus",
     "Cat",
+    "CatPhoto",
+    "CatSound",
     "CatStatus",
     "HousingType",
     "Sex",

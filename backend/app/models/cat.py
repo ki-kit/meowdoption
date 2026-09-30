@@ -9,6 +9,7 @@ from app.db import Base
 
 if TYPE_CHECKING:
     from app.models.application import Application
+    from app.models.media import CatPhoto, CatSound
 
 
 class Sex(StrEnum):
@@ -53,4 +54,17 @@ class Cat(Base):
     # SQLAlchemy loading every application just to delete it.
     applications: Mapped[list["Application"]] = relationship(
         back_populates="cat", cascade="all, delete-orphan", passive_deletes=True
+    )
+    # Oldest first: the order they were uploaded, which the admin UI shows.
+    photos: Mapped[list["CatPhoto"]] = relationship(
+        back_populates="cat",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CatPhoto.id",
+    )
+    sounds: Mapped[list["CatSound"]] = relationship(
+        back_populates="cat",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="CatSound.id",
     )

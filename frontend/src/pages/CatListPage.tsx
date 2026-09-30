@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "react-router";
 
 import { PAGE_SIZE, type CatFilters } from "../api/cats";
@@ -12,14 +13,29 @@ export function CatListPage() {
   const filters = filtersFromParams(searchParams);
   const { data, isPending, isError, isPlaceholderData } = useCats(filters);
 
-  const setFilters = (next: CatFilters) => setSearchParams(paramsFromFilters(next));
+  // A second change can arrive before the page re-renders with the first one
+  // (fast user, or a test). Building on the last *requested* params instead of
+  // the rendered ones keeps the first change. (setSearchParams(prev => ...)
+  // doesn't help: its prev is the current URL, not the pending one.)
+  const requested = useRef<URLSearchParams | null>(null);
+  useEffect(() => {
+    // The URL has caught up: it's the source of truth again (incl. back/forward).
+    if (requested.current?.toString() === searchParams.toString()) requested.current = null;
+  }, [searchParams]);
+
+  const setParams = (next: URLSearchParams) => {
+    requested.current = next;
+    setSearchParams(next);
+  };
+  const updateFilters = (patch: CatFilters) =>
+    setParams(paramsFromFilters({ ...filtersFromParams(requested.current ?? searchParams), ...patch }));
   const page = filters.page ?? 1;
   const pageCount = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
 
   return (
     <section>
       <h1 className="mb-6 text-3xl font-bold text-amber-800">Our cats</h1>
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={updateFilters} onClear={() => setParams(new URLSearchParams())} />
 
       {isPending && <p>Loading cats…</p>}
       {isError && <p role="alert">Couldn't load cats. Please try again later.</p>}
@@ -50,7 +66,7 @@ export function CatListPage() {
               <button
                 type="button"
                 disabled={page <= 1}
-                onClick={() => setFilters({ ...filters, page: page - 1 })}
+                onClick={() => updateFilters({ page: page - 1 })}
                 className="rounded-md border px-3 py-1 disabled:opacity-40"
               >
                 Previous
@@ -61,7 +77,7 @@ export function CatListPage() {
               <button
                 type="button"
                 disabled={page >= pageCount}
-                onClick={() => setFilters({ ...filters, page: page + 1 })}
+                onClick={() => updateFilters({ page: page + 1 })}
                 className="rounded-md border px-3 py-1 disabled:opacity-40"
               >
                 Next

@@ -18,6 +18,10 @@ export function makeCat(overrides: Partial<Cat> = {}): Cat {
     good_with_dogs: false,
     created_at: "2026-01-01T00:00:00",
     updated_at: "2026-01-01T00:00:00",
+    photos: [],
+    sounds: [],
+    primary_photo_url: null,
+    primary_sound_url: "/media/default/meow.wav",
     ...overrides,
   };
 }
