@@ -5,7 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.routers import cats
+from app.routers import applications, cats
 
 app = FastAPI(title="Meowdoption API", version="1.0.0")
 
@@ -22,4 +22,5 @@ def health(db: Annotated[Session, Depends(get_db)]) -> dict:
 # so existing clients (SPA, future mobile app) keep working on v1.
 v1 = APIRouter(prefix="/api/v1")
 v1.include_router(cats.router)
+v1.include_router(applications.router)
 app.include_router(v1)

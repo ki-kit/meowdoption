@@ -2,7 +2,10 @@ import { createBdd, test as base } from "playwright-bdd";
 
 // Per-scenario scratch space for passing data between When and Then steps
 // (a fresh object per scenario, like a pytest-bdd fixture).
-type World = { apiResponse?: { status: number; body: unknown } };
+type World = {
+  apiResponse?: { status: number; body: unknown };
+  email?: string;
+};
 
 export const test = base.extend<{ world: World }>({
   world: async ({}, use) => {

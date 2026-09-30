@@ -1,10 +1,14 @@
 from datetime import datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
+
+if TYPE_CHECKING:
+    from app.models.application import Application
 
 
 class Sex(StrEnum):
@@ -43,4 +47,10 @@ class Cat(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         server_default=func.now(), onupdate=func.now()
+    )
+
+    # passive_deletes: let the DB's ON DELETE CASCADE do the work instead of
+    # SQLAlchemy loading every application just to delete it.
+    applications: Mapped[list["Application"]] = relationship(
+        back_populates="cat", cascade="all, delete-orphan", passive_deletes=True
     )

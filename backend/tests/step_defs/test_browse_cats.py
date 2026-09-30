@@ -1,27 +1,8 @@
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import parsers, scenarios, then, when
 
 from app.models import Cat
 
 scenarios("browse_cats.feature")
-
-BOOL_FIELDS = {"castrated", "good_with_kids", "good_with_cats", "good_with_dogs"}
-INT_FIELDS = {"age_months"}
-
-
-def _convert(field: str, raw: str):
-    if field in BOOL_FIELDS:
-        return raw.lower() == "true"
-    if field in INT_FIELDS:
-        return int(raw)
-    return raw
-
-
-@given("the following cats exist:")
-def cats_exist(db_session, datatable):
-    header, *rows = datatable
-    for row in rows:
-        db_session.add(Cat(**{f: _convert(f, v) for f, v in zip(header, row)}))
-    db_session.commit()
 
 
 @when("I list cats")
