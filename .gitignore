@@ -13,6 +13,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.features-gen/
 
 # Data / runtime
 *.sqlite3
@@ -23,6 +24,7 @@ uploads/
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # Editors / OS
 .vscode/

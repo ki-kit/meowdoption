@@ -1,20 +1,33 @@
 # Dev stack for Meowdoption.
-# Services are added step by step: db (now), api, web, e2e (later steps).
+# Services: api + web (dev), db (profile "test", Postgres parity),
+# e2e (profile "e2e", Playwright against web).
 # Data lives in named volumes, not bind mounts: the project folder is a
 # VirtualBox share (vboxsf) with unreliable file locking and symlinks.
 
 services:
   api:
-    build: ./backend
+    build:
+      context: ./backend
+      target: dev
+    # Seeding is idempotent (only fills an empty DB); e2e relies on the sample cats.
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+             python -m app.seed &&
+             exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     # DB URLs default in code (SQLite). Override per run, e.g.
     #   podman-compose run -e TEST_DATABASE_URL=postgresql+psycopg://... api pytest
     # (podman-compose 1.3 doesn't expand ${VAR:-default} here.)
     environment:
       # vboxsf doesn't emit inotify events, so the reloader must poll.
       WATCHFILES_FORCE_POLLING: "true"
+      # Local-only admin, created by the seed step; e2e logs in with it.
+      # Never set these in production (the app refuses to start if you do).
+      MEOW_DEV_ADMIN_EMAIL: admin@meowdoption.local
+      MEOW_DEV_ADMIN_PASSWORD: meow-dev-password
+      # In dev every browser request reaches the API via the Vite proxy, i.e.
+      # from ONE IP, so the per-IP login limit would soon block everyone
+      # (e2e fails logins on purpose). The per-account limit stays as in prod.
+      MEOW_LOGIN_MAX_FAILURES_PER_IP: "1000"
     # The project dir is root:vboxsf 770; keep the host user's vboxsf
     # group inside the container so the bind mount is readable.
     group_add: [keep-groups]
@@ -23,6 +36,34 @@ services:
     volumes:
       - ./backend:/app
       - apidata:/data
+
+  web:
+    build:
+      context: ./frontend
+      target: dev
+    group_add: [keep-groups]
+    # No depends_on: Vite only reaches api when proxying a request, and
+    # unit tests must run without the backend (podman-compose 1.3 ignores --no-deps).
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Named volume shadows the bind mount's node_modules: npm's symlinks
+      # break on vboxsf. After changing package.json, rebuild the image and
+      # remove this volume (podman volume rm meowdoption_webmodules).
+      - webmodules:/app/node_modules
+
+  e2e:
+    build: ./e2e
+    profiles: ["e2e"]
+    depends_on: [api, web]
+    group_add: [keep-groups]
+    # Chromium needs more than the default 64 MB /dev/shm.
+    ipc: host
+    volumes:
+      - ./e2e:/e2e
+      # Same vboxsf symlink issue as web; rebuild + drop volume after package.json changes.
+      - e2emodules:/e2e/node_modules
 
   db:
     # Postgres is only needed for test/prod parity; dev uses SQLite.
@@ -45,3 +86,5 @@ services:
 volumes:
   apidata:
   pgdata:
+  webmodules:
+  e2emodules:
