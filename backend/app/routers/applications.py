@@ -1,17 +1,12 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 
-from app.db import get_db
+from app.deps import DbSession
 from app.models import Application, Cat, CatStatus
 from app.schemas.application import ApplicationCreate, ApplicationReceipt
 
 router = APIRouter(tags=["applications"])
-
-DbSession = Annotated[Session, Depends(get_db)]
 
 ALREADY_APPLIED = "You have already applied for this cat."
 

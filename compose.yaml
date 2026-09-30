@@ -18,6 +18,10 @@ services:
     environment:
       # vboxsf doesn't emit inotify events, so the reloader must poll.
       WATCHFILES_FORCE_POLLING: "true"
+      # Local-only admin, created by the seed step; e2e logs in with it.
+      # Never set these in production (the app refuses to start if you do).
+      MEOW_DEV_ADMIN_EMAIL: admin@meowdoption.local
+      MEOW_DEV_ADMIN_PASSWORD: meow-dev-password
     # The project dir is root:vboxsf 770; keep the host user's vboxsf
     # group inside the container so the bind mount is readable.
     group_add: [keep-groups]

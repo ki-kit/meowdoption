@@ -1,4 +1,4 @@
-import { ApiError, apiGet, apiPost, errorMessage, fieldErrors } from "./client";
+import { ApiError, apiGet, apiPost, apiPostForm, errorMessage, fieldErrors } from "./client";
 
 describe("apiGet", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -59,5 +59,19 @@ describe("error helpers", () => {
     });
     expect(fieldErrors(err)).toEqual({ email: "bad email", full_name: "too short" });
     expect(fieldErrors(new ApiError(409, { detail: "x" }))).toEqual({});
+  });
+});
+
+describe("apiPostForm", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("sends form fields and handles an empty 204 reply", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(null, { status: 204 }));
+
+    await expect(apiPostForm("/auth/logout", { a: "1 & 2" })).resolves.toBeUndefined();
+    const body = fetchMock.mock.calls[0][1]?.body as URLSearchParams;
+    expect(body.toString()).toBe("a=1+%26+2");
   });
 });
