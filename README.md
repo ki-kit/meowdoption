@@ -1,141 +1,147 @@
 # 🐱 Meowdoption
 
-A cat adoption website: visitors browse and filter cats, see their photos, hear
-their meows and apply to adopt; shelter admins manage cats and review
-applications.
+A cat adoption website. Visitors browse the shelter's cats, filter them, see
+their photos, hear their meows and apply to adopt one. Shelter admins log in
+to manage the cats and review the applications.
 
-| Part | Stack |
+**Features**
+
+- Cat catalog with filters (sex, castrated, status, good with kids/cats/dogs),
+  kept in the URL so a filtered list can be shared
+- Cat detail page with a photo gallery and a 🔊 meow button
+- Adoption application form, one application per person per cat
+- Admin panel: add/edit/delete cats, upload photos and meows, approve or
+  reject applications (approving marks the cat adopted and rejects the others)
+- Secure admin login with rate limiting against password guessing
+
+## Technologies
+
+| Part | Technologies |
 |---|---|
-| Backend | FastAPI, SQLAlchemy 2, Alembic, Pydantic v2 (Python 3.13) |
-| Frontend | React 19 + TypeScript, Vite, React Router, TanStack Query, Tailwind, react-hook-form + zod |
-| Database | SQLite in dev, PostgreSQL in test/prod |
-| Tests | pytest + pytest-bdd, Vitest + Testing Library, Playwright (+ playwright-bdd) |
-| Runtime | Podman + podman-compose; everything runs in containers |
+| Backend | Python 3.13, FastAPI, SQLAlchemy 2, Alembic, Pydantic v2 |
+| Frontend | React 19, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS, react-hook-form + zod |
+| Database | SQLite in development, PostgreSQL in production |
+| Media | Pillow (images), filetype + mutagen (audio) |
+| Auth | JWT (httpOnly cookie for the web app, Bearer token for API clients), Argon2 password hashing |
+| Tests | pytest + pytest-bdd, Vitest + Testing Library, Playwright + playwright-bdd |
+| Runtime | Podman + podman-compose; production served by nginx |
 
-## Development
+Features are specified as Gherkin scenarios (`*.feature` files), both for the
+API (pytest-bdd) and in the browser (Playwright).
 
-```sh
-podman-compose up -d            # api (:8000) + web (:5173)
+## Project structure
+
+```
+meowdoption/
+├── backend/                 FastAPI app
+│   ├── app/
+│   │   ├── routers/         API endpoints (cats, applications, auth, admin, media)
+│   │   ├── models/          database tables (SQLAlchemy)
+│   │   ├── schemas/         request/response shapes (Pydantic)
+│   │   ├── services/        business rules (application review, uploads, login limits)
+│   │   ├── storage.py       where uploaded files are stored
+│   │   ├── seed.py          sample cats for development
+│   │   └── cli.py           admin commands (create-admin)
+│   ├── alembic/             database migrations
+│   └── tests/               features/*.feature + step definitions, unit tests
+├── frontend/                React single-page app
+│   ├── src/
+│   │   ├── pages/           public pages and pages/admin/
+│   │   ├── components/      reusable UI pieces
+│   │   ├── api/             API client + types generated from the backend
+│   │   └── hooks/, lib/     data fetching, validation, helpers
+│   └── nginx/               production web server config
+├── e2e/                     browser tests: features/*.feature + steps/
+├── scripts/                 gen-api-types.sh (regenerates the frontend API types)
+├── docs/deployment.md       running it in production
+├── compose.yaml             development stack
+└── compose.prod.yaml        production stack
 ```
 
-- App: http://localhost:5173 (Vite proxies `/api` and `/media` to the API)
-- API docs: http://localhost:8000/docs
-- On start the API runs migrations and seeds 6 sample cats plus a **dev admin**
-  (`admin@meowdoption.local` / `meow-dev-password`, set in `compose.yaml`).
-- Too many wrong passwords block that email for 15 minutes (see Production).
-  In dev all requests share the Vite proxy's IP, so the per-IP limit is raised
-  there; the per-account one applies as in production.
-- Code reloads on save (file watching polls: the project may live on a
-  VirtualBox shared folder, which emits no file events).
+## How to run it
 
-After changing `frontend/package.json`, rebuild and reset the modules volume:
+**Prerequisites:** [Podman](https://podman.io) and
+[podman-compose](https://github.com/containers/podman-compose) (developed with
+Podman 5.4 and podman-compose 1.3), plus git. Everything else (Python, Node,
+the database, browsers for testing) runs inside containers; nothing else needs
+to be installed.
 
 ```sh
+git clone https://github.com/ki-kit/meowdoption.git
+cd meowdoption
+podman-compose up -d
+```
+
+The first start builds the images, which takes a few minutes. Then open:
+
+- **Website:** http://localhost:5173
+- **API documentation:** http://localhost:8000/docs
+- **Admin panel:** http://localhost:5173/admin, log in with the development
+  admin `admin@meowdoption.local` / `meow-dev-password`
+
+On start the API applies the database migrations and adds 6 sample cats. Code
+changes reload automatically.
+
+```sh
+podman-compose logs -f api      # follow the API's log
+podman-compose down             # stop everything (data is kept)
+podman-compose down && podman volume rm meowdoption_apidata   # start over with a fresh database
+```
+
+Create a real admin account (password: at least 12 characters):
+
+```sh
+podman-compose run --rm api python -m app.cli create-admin you@example.com
+```
+
+### Running the tests
+
+```sh
+podman-compose run --rm api pytest                # backend (SQLite)
+podman-compose run --rm web npm test              # frontend
+podman-compose --profile e2e run --rm e2e         # browser end-to-end (needs `podman-compose up -d` first)
+```
+
+<details>
+<summary>More: Postgres tests, typecheck, API types, dependency changes</summary>
+
+```sh
+# Backend tests on PostgreSQL (includes the concurrent-approval race test)
+podman-compose --profile test up -d db
+podman-compose run --rm -e TEST_DATABASE_URL=postgresql+psycopg://meow:meow@db:5432/meowdoption api pytest
+
+# Frontend typecheck
+podman-compose run --rm web npm run typecheck
+
+# The frontend's API types are generated from the backend; after changing a
+# backend schema, regenerate and commit. --check fails if they're stale (CI).
+scripts/gen-api-types.sh
+scripts/gen-api-types.sh --check
+
+# After changing frontend/package.json: rebuild and reset the node_modules volume
 podman-compose stop web && podman rm meowdoption_web_1 && podman volume rm meowdoption_webmodules
 podman-compose build web && podman-compose up -d web
 ```
 
-Start over with a fresh dev database: `podman-compose down && podman volume rm meowdoption_apidata`.
-
-## Tests
-
-```sh
-# Backend: BDD features (tests/features/*.feature) + unit tests, on SQLite
-podman-compose run --rm api pytest
-
-# ...and on Postgres (includes the concurrent-approval race test)
-podman-compose --profile test up -d db
-podman-compose run --rm -e TEST_DATABASE_URL=postgresql+psycopg://meow:meow@db:5432/meowdoption api pytest
-
-# Frontend unit/component tests + typecheck
-podman-compose run --rm web npm test
-podman-compose run --rm web npm run typecheck
-
-# End-to-end (Gherkin features in e2e/features, headless Chromium in a container)
-podman-compose up -d api web
-podman-compose --profile e2e run --rm e2e
-```
-
-e2e runs against the dev database. Scenarios that change data create their own
-cats and delete them afterwards; applications they submit use unique
+e2e runs against the development database. Scenarios that change data create
+their own cats and delete them afterwards; applications they submit use unique
 `e2e-…@example.com` addresses.
 
-## API types
+In development all browser requests reach the API through the Vite proxy, i.e.
+from one IP, so the per-IP login limit is raised there (`compose.yaml`); the
+per-account limit works as in production.
+</details>
 
-The frontend's API types (`frontend/src/api/schema.d.ts`) are **generated** from
-the backend's OpenAPI schema, never written by hand:
+### Production
 
-```sh
-scripts/gen-api-types.sh           # after changing a backend schema; commit the result
-scripts/gen-api-types.sh --check   # CI: fails if the committed types are stale
-```
-
-## Admin accounts
-
-```sh
-podman-compose run --rm api python -m app.cli create-admin you@example.com   # prompts for a password
-```
-
-Passwords need at least 12 characters. `--password-stdin` reads it from stdin (scripts).
-
-## Production
-
-`compose.prod.yaml` runs Postgres, the API (`backend/Containerfile`, target
-`prod`) and nginx serving the built SPA (`frontend/Containerfile`, target `prod`).
-
-```sh
-cp .env.prod.example .env.prod      # fill in real secrets (it's gitignored)
-podman-compose -p meowdoption-prod -f compose.prod.yaml up -d --build
-podman exec -i meowdoption-prod_api_1 python -m app.cli create-admin you@example.com
-```
-
-- The site is on port **8080**. Put a TLS-terminating reverse proxy in front:
-  auth cookies are `Secure` in production, so **logging in requires HTTPS**.
-- The API refuses to start with the dev secret, a secret under 32 characters,
-  insecure cookies, or dev-admin variables set.
-- Both containers run as non-root users; the API code is read-only to its user.
-- nginx: SPA routing, long-lived caching for hashed assets, security headers
-  including a strict Content-Security-Policy, 6 MB request body limit. The API
-  docs (`/docs`) aren't exposed.
-- Migrations run automatically when the API container starts.
-- **Login rate limiting**, in two layers:
-  - API: failed logins are counted per client IP: 5 per account (IP + email)
-    and 20 across accounts, within 15 minutes → `429` with `Retry-After`.
-    While blocked, even the correct password is refused. A successful login
-    resets that account's count. No email-only lockout, so nobody can lock
-    the real admin out from elsewhere. Settings: `MEOW_LOGIN_*` in
-    `backend/app/config.py`.
-  - nginx: at most 10 login requests/minute per IP (burst 10), which stops
-    floods before they reach the (deliberately slow) password hashing.
-  - The client IP comes from nginx, which overwrites `X-Forwarded-For` so it
-    can't be spoofed. **Behind a TLS proxy/load balancer**, enable the
-    `set_real_ip_from` lines in `frontend/nginx/default.conf`; otherwise every
-    visitor shares the proxy's IP and one login limit.
-- `-p meowdoption-prod` keeps it separate from the dev stack. After changing
-  one service, use `down` + `up`: podman-compose 1.3 can't recreate a service
-  that another one depends on.
-
-Public e2e scenarios can run against it; `@admin` ones need HTTPS (see above):
-
-```sh
-podman run --rm --network meowdoption-prod_default --group-add keep-groups -v ./e2e:/e2e:z \
-  -v meowdoption_e2emodules:/e2e/node_modules -w /e2e -e E2E_BASE_URL=http://web:8080 \
-  localhost/meowdoption_e2e sh -c "npx bddgen && npx playwright test --grep-invert @admin"
-```
-
-## Project layout
-
-```
-backend/    app/ (routers, models, schemas, services, storage.py), alembic/, tests/
-frontend/   src/ (api/, components/, pages/, hooks/, lib/), nginx/ (prod config)
-e2e/        features/*.feature, steps/*.ts
-scripts/    gen-api-types.sh
-```
+See **[docs/deployment.md](docs/deployment.md)**: it runs with PostgreSQL and
+nginx on port 8080, and needs HTTPS in front for logging in.
 
 ## Known limitations
 
-- **Logout** ends the browser session only; a copied Bearer token stays valid
+- Logging out ends the browser session only; a copied Bearer token stays valid
   until it expires (8 h) or the admin is deactivated.
-- **Media URLs are relative** (`/media/...`); a future mobile client needs to
+- Media URLs are relative (`/media/...`); a future mobile app would need to
   prefix the server's address.
-- Media is stored on a local volume (`storage.py` is the seam for S3/MinIO).
+- Uploaded files are stored on a local volume (`storage.py` is where S3/MinIO
+  support would go).
