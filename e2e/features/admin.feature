@@ -1,3 +1,6 @@
+# @admin: needs a login cookie. Production cookies are Secure-only (HTTPS),
+# so these are skipped when e2e runs against a plain-HTTP prod stack.
+@admin
 Feature: Admin panel
   As a shelter admin
   I want to manage cats and review applications

@@ -56,7 +56,9 @@ class MediaUpdate(BaseModel):
 
 class CatRead(BaseModel):
     # from_attributes lets Pydantic read directly from SQLAlchemy objects.
-    model_config = ConfigDict(from_attributes=True)
+    # defaults_required: fields with defaults are still always *sent*, so the
+    # OpenAPI schema (and the generated TS types) mark them as required.
+    model_config = ConfigDict(from_attributes=True, json_schema_serialization_defaults_required=True)
 
     id: int
     name: str

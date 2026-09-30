@@ -8,6 +8,7 @@ Feature: Cat photos and meows
     When I click the meow button for "Luna"
     Then a meow starts playing from "/media/default/meow.wav"
 
+  @admin
   Scenario: Admin uploads a photo and a meow, visitors see and hear them
     Given I am logged in as the dev admin
     And I have added a new cat

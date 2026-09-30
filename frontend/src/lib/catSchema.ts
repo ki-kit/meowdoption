@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from "./zod";
 
 // Same limits as the backend (app/schemas/cat.py CatCreate).
 export const catSchema = z.object({

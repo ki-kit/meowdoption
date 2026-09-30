@@ -1,9 +1,8 @@
 import { ApiError, apiGet, apiPostForm } from "./client";
+import type { components } from "./schema";
 
-export interface Admin {
-  id: number;
-  email: string;
-}
+// Generated from the API's OpenAPI schema (npm run gen:api).
+export type Admin = components["schemas"]["AdminRead"];
 
 // The API also returns the token in the body (for API/mobile clients); the SPA
 // ignores it and relies on the httpOnly cookie, which JavaScript can't read.

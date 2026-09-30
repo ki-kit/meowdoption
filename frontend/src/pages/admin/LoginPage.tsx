@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
-import { z } from "zod";
+import { z } from "../../lib/zod";
 
 import { ApiError } from "../../api/client";
 import { FormField, inputClass } from "../../components/FormField";

@@ -9,6 +9,7 @@ Feature: Admin login
     Given I open "/admin"
     Then I see the heading "Admin login"
 
+  @admin
   Scenario: Admin logs in and out
     Given I open "/admin"
     When I log in as the dev admin

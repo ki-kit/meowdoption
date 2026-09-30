@@ -24,6 +24,7 @@ uploads/
 .env
 .env.*
 !.env.example
+!.env.prod.example
 
 # Editors / OS
 .vscode/
