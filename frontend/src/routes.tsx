@@ -1,6 +1,8 @@
 import type { RouteObject } from "react-router";
 
 import { Layout } from "./components/Layout";
+import { CatDetailPage } from "./pages/CatDetailPage";
+import { CatListPage } from "./pages/CatListPage";
 import { HomePage } from "./pages/HomePage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
@@ -10,6 +12,8 @@ export const routes: RouteObject[] = [
     element: <Layout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: "cats", element: <CatListPage /> },
+      { path: "cats/:id", element: <CatDetailPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

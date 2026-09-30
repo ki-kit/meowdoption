@@ -10,9 +10,11 @@ export function renderRoute(path: string) {
     defaultOptions: { queries: { retry: false } },
   });
   const router = createMemoryRouter(routes, { initialEntries: [path] });
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
+  // router is returned so tests can assert on the URL (e.g. filter params).
+  return { ...view, router };
 }

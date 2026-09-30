@@ -1,3 +1,5 @@
+import { Link } from "react-router";
+
 export function HomePage() {
   return (
     <section className="text-center">
@@ -5,6 +7,12 @@ export function HomePage() {
       <p className="mt-4 text-lg text-stone-600">
         Browse cats waiting for a loving home.
       </p>
+      <Link
+        to="/cats"
+        className="mt-8 inline-block rounded-full bg-amber-600 px-6 py-3 font-semibold text-white hover:bg-amber-700"
+      >
+        Browse cats
+      </Link>
     </section>
   );
 }

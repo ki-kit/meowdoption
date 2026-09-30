@@ -7,9 +7,11 @@
 services:
   api:
     build: ./backend
+    # Seeding is idempotent (only fills an empty DB); e2e relies on the sample cats.
     command: >
       sh -c "alembic upgrade head &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+             python -m app.seed &&
+             exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     # DB URLs default in code (SQLite). Override per run, e.g.
     #   podman-compose run -e TEST_DATABASE_URL=postgresql+psycopg://... api pytest
     # (podman-compose 1.3 doesn't expand ${VAR:-default} here.)
