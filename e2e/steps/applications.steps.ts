@@ -44,6 +44,7 @@ When(
   },
 );
 
+// Substring match: "Apply to adopt" also catches "Apply to adopt Luna".
 Then("I do not see the link {string}", async ({ page }, name: string) => {
   await expect(page.getByRole("link", { name })).toHaveCount(0);
 });

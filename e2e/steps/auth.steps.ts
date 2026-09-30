@@ -1,9 +1,13 @@
 import { expect } from "@playwright/test";
-import { Then, When } from "./fixtures";
+import { ADMIN_EMAIL, ADMIN_PASSWORD, Given, Then, When } from "./fixtures";
 
-// Defaults match the dev admin seeded by compose (MEOW_DEV_ADMIN_*).
-const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "admin@meowdoption.local";
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "meow-dev-password";
+Given("I am logged in as the dev admin", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(ADMIN_EMAIL);
+  await page.getByLabel("Password").fill(ADMIN_PASSWORD);
+  await page.getByRole("button", { name: "Log in" }).click();
+  await expect(page.getByRole("heading", { name: "Applications", level: 1 })).toBeVisible();
+});
 
 When("I log in as the dev admin", async ({ page }) => {
   await page.getByLabel("Email").fill(ADMIN_EMAIL);

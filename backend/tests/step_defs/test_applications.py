@@ -1,7 +1,7 @@
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import parsers, scenarios, then, when
 from sqlalchemy import select
 
-from app.models import Application, Cat, HousingType
+from app.models import Cat
 
 scenarios("applications.feature")
 
@@ -17,19 +17,6 @@ def _form(datatable) -> dict:
     if "has_other_pets" in body:
         body["has_other_pets"] = body["has_other_pets"].lower() == "true"
     return body
-
-
-@given(parsers.parse('"{email}" already applied for "{name}"'))
-def already_applied(db_session, email, name):
-    db_session.add(
-        Application(
-            cat_id=_cat(db_session, name).id,
-            full_name="Earlier Applicant",
-            email=email,
-            housing_type=HousingType.apartment,
-        )
-    )
-    db_session.commit()
 
 
 @when(parsers.parse('I apply for "{name}" with:'))
@@ -52,13 +39,6 @@ def application_status(ctx, status):
 @then(parsers.parse('the response has only "{fields}"'))
 def response_fields(ctx, fields):
     assert set(ctx["response"].json()) == {f.strip() for f in fields.split(",")}
-
-
-@then(parsers.parse('the error is about "{field}"'))
-def error_about(ctx, field):
-    # FastAPI 422 body: {"detail": [{"loc": ["body", "<field>"], ...}, ...]}
-    fields = {err["loc"][-1] for err in ctx["response"].json()["detail"]}
-    assert field in fields, fields
 
 
 @then(parsers.re(r'"(?P<name>[^"]+)" has (?P<count>\d+) applications?$'))

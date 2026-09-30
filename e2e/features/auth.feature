@@ -12,7 +12,7 @@ Feature: Admin login
   Scenario: Admin logs in and out
     Given I open "/admin"
     When I log in as the dev admin
-    Then I see the heading "Admin dashboard"
+    Then I see the heading "Applications"
     And my session cookie is not readable by JavaScript
     When I press "Log out"
     Then I see the heading "Admin login"
